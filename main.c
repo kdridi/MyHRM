@@ -140,17 +140,23 @@ enum {
 
 void game_execute(int *program, size_t program_size)
 {
+    bool stopped = false;
+    size_t steps = 0;
     t_value *value;
     is_holding = false;
     int pc = 0;
-    while (pc < program_size)
+    while (stopped == false && pc < program_size)
     {
+        steps += 1;
         int command = program[pc];
         
         switch (command) {
             case INBOX:
-                if (in.length == 0)
-                    return;
+                stopped = in.length == 0;
+                if (stopped) {
+                    steps -= 1;
+                    continue;
+                }
                 conveyor_shift(&in, &player);
                 is_holding = true;
                 break;
@@ -194,31 +200,29 @@ void game_execute(int *program, size_t program_size)
         }
         pc = pc + 1;
     }
+    
+    printf("STEPS: %lu\n", steps);
+    printf("###################\n");
 }
 
 int main(void)
 {
     int program[] = {
         INBOX,
-        JUMP, 4,
-        COPYFROM, 0,
         COPYTO, 0,
-        JUMPIFZ, 1,
+        ADD, 0,
+        ADD, 0,
         OUTBOX,
-        JUMP, -12,
+        JUMP, -10,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 
     conveyor_initalize(&in);
     conveyor_initalize(&out);
     
-    conveyor_push_integer(&in, 7);
-    conveyor_push_integer(&in, 0);
-    conveyor_push_integer(&in, 9);
-    conveyor_push_character(&in, 'A');
-    conveyor_push_integer(&in, 0);
-    conveyor_push_integer(&in, 0);
-    conveyor_push_integer(&in, -4);
+    conveyor_push_integer(&in, 4);
+    conveyor_push_integer(&in, -7);
+    conveyor_push_integer(&in, 6);
     conveyor_push_integer(&in, 0);
 
     game_print();
