@@ -138,6 +138,29 @@ enum {
     JUMPIFZ,
 };
 
+size_t get_program_size(int *program, size_t program_size)
+{
+    size_t result = 0;
+    for (size_t i = 0; i < program_size; ++i)
+    {
+        int command = program[i];
+        switch (command) {
+            case JUMP:
+            case COPYFROM:
+            case COPYTO:
+            case ADD:
+            case JUMPIFZ:
+                i += 1;
+            case INBOX:
+            case OUTBOX:
+                result += 1;
+                break;
+        }
+    }
+    
+    return (result);
+}
+
 void game_execute(int *program, size_t program_size)
 {
     bool stopped = false;
@@ -201,6 +224,7 @@ void game_execute(int *program, size_t program_size)
         pc = pc + 1;
     }
     
+    printf("PSIZE: %lu\n", get_program_size(program, program_size));
     printf("STEPS: %lu\n", steps);
     printf("###################\n");
 }
@@ -216,6 +240,7 @@ int main(void)
         JUMP, -10,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
+    
 
     conveyor_initalize(&in);
     conveyor_initalize(&out);
@@ -231,3 +256,4 @@ int main(void)
 
     return (0);
 }
+
