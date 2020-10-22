@@ -133,6 +133,7 @@ enum {
     OUTBOX,
     JUMP,
     COPYFROM,
+    COPYTO,
 };
 
 void game_execute(int *program, size_t program_size)
@@ -140,12 +141,14 @@ void game_execute(int *program, size_t program_size)
     t_value *value;
     is_holding = false;
     int pc = 0;
-    while (pc < program_size && (in.length > 0 || is_holding == true))
+    while (pc < program_size)
     {
         int command = program[pc];
         
         switch (command) {
             case INBOX:
+                if (in.length == 0)
+                    return;
                 conveyor_shift(&in, &player);
                 is_holding = true;
                 break;
@@ -162,6 +165,12 @@ void game_execute(int *program, size_t program_size)
                 player.integer = value->integer;
                 player.character = value->character;
                 is_holding = true;
+                break;
+            case COPYTO:
+                value = ground + program[++pc];
+                value->type = player.type;
+                value->integer = player.integer;
+                value->character = player.character;
                 break;
             default:
                 printf("Command not found!");
@@ -182,22 +191,25 @@ int main(void)
     }
     
     int program[] = {
-        COPYFROM, 4,
+        INBOX,
+        COPYTO, 0,
+        INBOX,
         OUTBOX,
         COPYFROM, 0,
         OUTBOX,
-        COPYFROM, 3,
-        OUTBOX,
+        JUMP, -9,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 
     conveyor_initalize(&in);
     conveyor_initalize(&out);
-
-    conveyor_push_integer(&in, -99);
-    conveyor_push_integer(&in, -99);
-    conveyor_push_integer(&in, -99);
-    conveyor_push_integer(&in, -99);
+    
+    conveyor_push_integer(&in, 4);
+    conveyor_push_integer(&in, 7);
+    conveyor_push_character(&in, 'A');
+    conveyor_push_character(&in, 'G');
+    conveyor_push_integer(&in, 3);
+    conveyor_push_integer(&in, 7);
 
     game_print();
     game_execute(program, program_size);
