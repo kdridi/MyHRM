@@ -115,7 +115,7 @@ void conveyor_push_character(t_conveyor *c, char character)
 t_conveyor in;
 t_conveyor out;
 t_value player;
-t_value ground[3];
+t_value ground[9];
 bool is_holding;
 
 void game_print()
@@ -135,6 +135,7 @@ enum {
     COPYFROM,
     COPYTO,
     ADD,
+    JUMPIFZ,
 };
 
 void game_execute(int *program, size_t program_size)
@@ -177,6 +178,12 @@ void game_execute(int *program, size_t program_size)
                 value = ground + program[++pc];
                 player.integer += value->integer;
                 break;
+            case JUMPIFZ:
+                if (player.type == INTEGER && player.integer == 0)
+                    pc += program[pc + 1];
+                else
+                    pc += 1;
+                break;
             default:
                 printf("Command not found!");
                 abort();
@@ -190,11 +197,9 @@ int main(void)
 {
     int program[] = {
         INBOX,
-        COPYTO, 0,
-        INBOX,
-        ADD, 0,
+        JUMPIFZ, 2,
         OUTBOX,
-        JUMP, -8,
+        JUMP, -5,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 
@@ -202,13 +207,13 @@ int main(void)
     conveyor_initalize(&out);
     
     conveyor_push_integer(&in, 7);
+    conveyor_push_integer(&in, 0);
     conveyor_push_integer(&in, 9);
-    conveyor_push_integer(&in, 9);
-    conveyor_push_integer(&in, 6);
-    conveyor_push_integer(&in, -1);
-    conveyor_push_integer(&in, 7);
-    conveyor_push_integer(&in, 9);
-    conveyor_push_integer(&in, -6);
+    conveyor_push_character(&in, 'A');
+    conveyor_push_integer(&in, 0);
+    conveyor_push_integer(&in, 0);
+    conveyor_push_integer(&in, -4);
+    conveyor_push_integer(&in, 0);
 
     game_print();
     game_execute(program, program_size);
