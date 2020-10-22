@@ -19,12 +19,6 @@ enum e_value_type
     INTEGER,
 };
 
-enum {
-    INBOX,
-    OUTBOX,
-    JUMP,
-};
-
 typedef struct s_value t_value;
 
 struct s_value
@@ -121,6 +115,7 @@ void conveyor_push_character(t_conveyor *c, char character)
 t_conveyor in;
 t_conveyor out;
 t_value player;
+t_value ground[6];
 bool is_holding;
 
 void game_print()
@@ -133,8 +128,16 @@ void game_print()
     printf("###################\n");
 }
 
+enum {
+    INBOX,
+    OUTBOX,
+    JUMP,
+    COPYFROM,
+};
+
 void game_execute(int *program, size_t program_size)
 {
+    t_value *value;
     is_holding = false;
     int pc = 0;
     while (pc < program_size && (in.length > 0 || is_holding == true))
@@ -153,6 +156,13 @@ void game_execute(int *program, size_t program_size)
             case JUMP:
                 pc += program[pc + 1];
                 break;
+            case COPYFROM:
+                value = ground + program[++pc];
+                player.type = value->type;
+                player.integer = value->integer;
+                player.character = value->character;
+                is_holding = true;
+                break;
             default:
                 printf("Command not found!");
                 abort();
@@ -164,26 +174,30 @@ void game_execute(int *program, size_t program_size)
 
 int main(void)
 {
+    const char *values = "UJXGBE";
+    for (size_t i = 0; values[i] != 0; ++i)
+    {
+        ground[i].type = CHARACTER;
+        ground[i].character = values[i];
+    }
+    
     int program[] = {
-        INBOX,
+        COPYFROM, 4,
         OUTBOX,
-        JUMP, -3,
+        COPYFROM, 0,
+        OUTBOX,
+        COPYFROM, 3,
+        OUTBOX,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 
     conveyor_initalize(&in);
     conveyor_initalize(&out);
 
-    conveyor_push_character(&in, 'i');
-    conveyor_push_character(&in, 'n');
-    conveyor_push_character(&in, 'i');
-    conveyor_push_character(&in, 't');
-    conveyor_push_character(&in, 'i');
-    conveyor_push_character(&in, 'a');
-    conveyor_push_character(&in, 'l');
-    conveyor_push_character(&in, 'i');
-    conveyor_push_character(&in, 'z');
-    conveyor_push_character(&in, 'e');
+    conveyor_push_integer(&in, -99);
+    conveyor_push_integer(&in, -99);
+    conveyor_push_integer(&in, -99);
+    conveyor_push_integer(&in, -99);
 
     game_print();
     game_execute(program, program_size);
