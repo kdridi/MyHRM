@@ -159,30 +159,33 @@ void game_execute(int *program, size_t program_size)
                 conveyor_unshift(&out, &player);
                 break;
             case JUMP:
-                pc += program[pc + 1];
+                pc += 1;
+                pc += program[pc];
                 break;
             case COPYFROM:
-                value = ground + program[++pc];
+                pc += 1;
+                value = ground + program[pc];
                 player.type = value->type;
                 player.integer = value->integer;
                 player.character = value->character;
                 is_holding = true;
                 break;
             case COPYTO:
-                value = ground + program[++pc];
+                pc += 1;
+                value = ground + program[pc];
                 value->type = player.type;
                 value->integer = player.integer;
                 value->character = player.character;
                 break;
             case ADD:
-                value = ground + program[++pc];
+                pc += 1;
+                value = ground + program[pc];
                 player.integer += value->integer;
                 break;
             case JUMPIFZ:
+                pc += 1;
                 if (player.type == INTEGER && player.integer == 0)
-                    pc += program[pc + 1];
-                else
-                    pc += 1;
+                    pc += program[pc];
                 break;
             default:
                 printf("Command not found!");
@@ -197,9 +200,12 @@ int main(void)
 {
     int program[] = {
         INBOX,
-        JUMPIFZ, 2,
+        JUMP, 4,
+        COPYFROM, 0,
+        COPYTO, 0,
+        JUMPIFZ, 1,
         OUTBOX,
-        JUMP, -5,
+        JUMP, -12,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 
