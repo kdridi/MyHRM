@@ -11,12 +11,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef enum e_print_mode t_print_mode;
+typedef enum e_value_type t_value_type;
 
-enum e_print_mode
+enum e_value_type
 {
-    MODE_INT,
-    MODE_CHAR,
+    CHARACTER,
+    INTEGER,
 };
 
 enum {
@@ -25,12 +25,21 @@ enum {
     JUMP,
 };
 
+typedef struct s_value t_value;
+
+struct s_value
+{
+    t_value_type type;
+    int integer;
+    char character;
+};
+
 typedef struct s_conveyor t_conveyor;
 
 struct s_conveyor
 {
     size_t length;
-    int array[256];
+    t_value array[256];
 };
 
 
@@ -44,16 +53,16 @@ void conveyor_initalize(t_conveyor *c)
     c->length = 0;
 }
 
-void conveyor_print(t_conveyor *c, t_print_mode mode)
+void conveyor_print(t_conveyor *c)
 {
     for (size_t i = 0; i < c->length; i++)
     {
-        switch (mode) {
-            case MODE_INT:
-                printf("%d\n", c->array[i]);
+        switch (c->array[i].type) {
+            case INTEGER:
+                printf("%d\n", c->array[i].integer);
                 break;
-            case MODE_CHAR:
-                printf("%c\n", c->array[i]);
+            case CHARACTER:
+                printf("%c\n", c->array[i].character);
                 break;
             default:
                 break;
@@ -61,46 +70,66 @@ void conveyor_print(t_conveyor *c, t_print_mode mode)
     }
 }
 
-void conveyor_push(t_conveyor *c, int value)
+void conveyor_push(t_conveyor *c, t_value *value)
 {
-    c->array[c->length] = value;
+    c->array[c->length].type = value->type;
+    c->array[c->length].character = value->character;
+    c->array[c->length].integer = value->integer;
     c->length = c->length + 1;
 }
 
-int conveyor_pop(t_conveyor *c)
+void conveyor_pop(t_conveyor *c, t_value *value)
 {
     c->length = c->length - 1;
-    return c->array[c->length];
+    value->type = c->array[c->length].type;
+    value->character = c->array[c->length].character;
+    value->integer = c->array[c->length].integer;
 }
 
-void conveyor_unshift(t_conveyor *c, int value)
+void conveyor_unshift(t_conveyor *c, t_value *value)
 {
     // [3, 7, 9]  ajoute 1 => [_ , 3, 7, 9]
-    memmove(c->array + 1, c->array + 0, c->length * sizeof(int));
-    c->array[0] = value;
+    memmove(c->array + 1, c->array + 0, c->length * sizeof(c->array[0]));
+    c->array[0].type = value->type;
+    c->array[0].character = value->character;
+    c->array[0].integer = value->integer;
     c->length = c->length + 1;
 }
 
-int conveyor_shift(t_conveyor *c)
+void conveyor_shift(t_conveyor *c, t_value *value)
 {
-    int result = c->array[0];
+    value->type = c->array[0].type;
+    value->character = c->array[0].character;
+    value->integer = c->array[0].integer;
+
     c->length = c->length - 1;
-    memmove(c->array + 0, c->array + 1, c->length * sizeof(int));
-    return (result);
+    memmove(c->array + 0, c->array + 1, c->length * sizeof(c->array[0]));
+}
+
+void conveyor_push_integer(t_conveyor *c, int integer)
+{
+    t_value value = { .type = INTEGER, .integer = integer };
+    conveyor_push(c, &value);
+}
+
+void conveyor_push_character(t_conveyor *c, char character)
+{
+    t_value value = { .type = CHARACTER, .character = character };
+    conveyor_push(c, &value);
 }
 
 t_conveyor in;
 t_conveyor out;
-int player;
+t_value player;
 bool is_holding;
 
-void game_print(t_print_mode mode)
+void game_print()
 {
     printf("IN:\n");
-    conveyor_print(&in, mode);
+    conveyor_print(&in);
 
     printf("OUT:\n");
-    conveyor_print(&out, mode);
+    conveyor_print(&out);
     printf("###################\n");
 }
 
@@ -114,12 +143,12 @@ void game_execute(int *program, size_t program_size)
         
         switch (command) {
             case INBOX:
-                player = conveyor_shift(&in);
+                conveyor_shift(&in, &player);
                 is_holding = true;
                 break;
             case OUTBOX:
                 is_holding = false;
-                conveyor_unshift(&out, player);
+                conveyor_unshift(&out, &player);
                 break;
             case JUMP:
                 pc += program[pc + 1];
@@ -145,20 +174,20 @@ int main(void)
     conveyor_initalize(&in);
     conveyor_initalize(&out);
 
-    conveyor_push(&in, 'i');
-    conveyor_push(&in, 'n');
-    conveyor_push(&in, 'i');
-    conveyor_push(&in, 't');
-    conveyor_push(&in, 'i');
-    conveyor_push(&in, 'a');
-    conveyor_push(&in, 'l');
-    conveyor_push(&in, 'i');
-    conveyor_push(&in, 'z');
-    conveyor_push(&in, 'e');
+    conveyor_push_character(&in, 'i');
+    conveyor_push_character(&in, 'n');
+    conveyor_push_character(&in, 'i');
+    conveyor_push_character(&in, 't');
+    conveyor_push_character(&in, 'i');
+    conveyor_push_character(&in, 'a');
+    conveyor_push_character(&in, 'l');
+    conveyor_push_character(&in, 'i');
+    conveyor_push_character(&in, 'z');
+    conveyor_push_character(&in, 'e');
 
-    game_print(MODE_CHAR);
+    game_print();
     game_execute(program, program_size);
-    game_print(MODE_CHAR);
+    game_print();
 
     return (0);
 }
