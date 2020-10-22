@@ -115,7 +115,7 @@ void conveyor_push_character(t_conveyor *c, char character)
 t_conveyor in;
 t_conveyor out;
 t_value player;
-t_value ground[6];
+t_value ground[3];
 bool is_holding;
 
 void game_print()
@@ -134,6 +134,7 @@ enum {
     JUMP,
     COPYFROM,
     COPYTO,
+    ADD,
 };
 
 void game_execute(int *program, size_t program_size)
@@ -172,6 +173,10 @@ void game_execute(int *program, size_t program_size)
                 value->integer = player.integer;
                 value->character = player.character;
                 break;
+            case ADD:
+                value = ground + program[++pc];
+                player.integer += value->integer;
+                break;
             default:
                 printf("Command not found!");
                 abort();
@@ -183,33 +188,27 @@ void game_execute(int *program, size_t program_size)
 
 int main(void)
 {
-    const char *values = "UJXGBE";
-    for (size_t i = 0; values[i] != 0; ++i)
-    {
-        ground[i].type = CHARACTER;
-        ground[i].character = values[i];
-    }
-    
     int program[] = {
         INBOX,
         COPYTO, 0,
         INBOX,
+        ADD, 0,
         OUTBOX,
-        COPYFROM, 0,
-        OUTBOX,
-        JUMP, -9,
+        JUMP, -8,
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 
     conveyor_initalize(&in);
     conveyor_initalize(&out);
     
-    conveyor_push_integer(&in, 4);
     conveyor_push_integer(&in, 7);
-    conveyor_push_character(&in, 'A');
-    conveyor_push_character(&in, 'G');
-    conveyor_push_integer(&in, 3);
+    conveyor_push_integer(&in, 9);
+    conveyor_push_integer(&in, 9);
+    conveyor_push_integer(&in, 6);
+    conveyor_push_integer(&in, -1);
     conveyor_push_integer(&in, 7);
+    conveyor_push_integer(&in, 9);
+    conveyor_push_integer(&in, -6);
 
     game_print();
     game_execute(program, program_size);
